@@ -5,7 +5,6 @@ from core.thumbmark import send_thumbmark
 
 def solve_clockwork_door():
 
-    # Step 1: homepage
     homepage_html = get_bo7_homepage()
 
     mysterious = extract_mysterious_value(homepage_html)
@@ -15,7 +14,6 @@ def solve_clockwork_door():
         "https://bo7.online/"
     )
 
-    # Step 2: open clockwork door
     response = SESSION.get(
         "https://bo7.online/the_clockwork_door",
         headers={
@@ -27,7 +25,6 @@ def solve_clockwork_door():
 
     mysterious2 = extract_mysterious_value(door_html)
 
-    # Step 3: thumbmark again
     thumb = send_thumbmark(
         mysterious2,
         "https://bo7.online/the_clockwork_door"
@@ -36,6 +33,9 @@ def solve_clockwork_door():
     print("Clockwork door status:", thumb.status_code)
 
     if thumb.status_code == 200:
+        with open("test_results/clockwork_door_result.html", "w") as f:
+            f.write(thumb.text)
+            f.close()
         print("Clockwork door solved")
 
 

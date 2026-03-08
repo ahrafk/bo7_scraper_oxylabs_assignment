@@ -130,6 +130,9 @@ def solve_verity_gate():
     print("verity gate final status:", resp2.status_code)
 
     if resp2.status_code == 200:
-        print("Verity Gate solved ✅")
+        print("Verity Gate solved")
+        with open("test_results/verity_gate_result.html", "w") as f:
+            f.write(resp2.text)
+            f.close()
     else:
-        print("Verity Gate failed ❌")
+        print("Verity Gate failed")

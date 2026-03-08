@@ -26,3 +26,6 @@ def solve_echoed_steps():
     )
 
     print("Echoed steps solved")
+    with open("test_results/echoed_steps_result.html", "w") as f:
+        f.write(door.text)
+        f.close()

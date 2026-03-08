@@ -10,13 +10,13 @@ from shattered_thresholds.the_verity_gate import solve_verity_gate
 def main():
     print("Starting BO7 challenge solver\n")
 
-    # solve_echoed_steps()
-    # solve_clockwork_door()
+    solve_echoed_steps()
+    solve_clockwork_door()
     solve_exiled_door()
-    # solve_fractured_mirror()
-    # solve_silver_veil()
-    # solve_mirrored_gaze()
-    # solve_sleeping_vault()
-    # solve_verity_gate()
+    solve_fractured_mirror()
+    solve_silver_veil()
+    solve_mirrored_gaze()
+    solve_sleeping_vault()
+    solve_verity_gate()
 if __name__ == "__main__":
     main()

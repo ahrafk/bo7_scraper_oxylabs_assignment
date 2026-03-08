@@ -57,18 +57,14 @@ def send_thumbmark(mysterious_value, referer, thumbmark, fingerprint):
 
 def solve_mirrored_gaze():
 
-    # Generate fingerprint ONCE
     thumbmark, fingerprint = generate_mirror_thumbmark()
 
-    # STEP 1 — Homepage
     homepage_html = get_bo7_homepage()
 
     mysterious_home = extract_mysterious_value(homepage_html)
 
-    # STEP 2 — Load thumbmark.js
     load_thumbmark_script("https://bo7.online/")
 
-    # STEP 3 — Send homepage thumbmark
     send_thumbmark(
         mysterious_home,
         "https://bo7.online/",
@@ -78,7 +74,6 @@ def solve_mirrored_gaze():
 
     time.sleep(0.2)
 
-    # STEP 4 — Open mirrored gaze page
     headers = HEADERS.copy()
     headers["referer"] = "https://bo7.online/"
 
@@ -93,10 +88,8 @@ def solve_mirrored_gaze():
 
     mysterious_page = extract_mysterious_value(html)
 
-    # STEP 5 — Load thumbmark.js again
     load_thumbmark_script("https://bo7.online/the_mirrored_gaze")
 
-    # STEP 6 — Send mirrored gaze thumbmark
     send_thumbmark(
         mysterious_page,
         "https://bo7.online/the_mirrored_gaze",
@@ -106,13 +99,15 @@ def solve_mirrored_gaze():
 
     time.sleep(0.2)
 
-    # STEP 7 — Reload page
     resp2 = SESSION.get(
         "https://bo7.online/the_mirrored_gaze",
         headers=headers
     )
 
     print("mirrored gaze final status:", resp2.status_code)
+    with open("test_results/mirrored_gaze_result.html", "w") as f:
+        f.write(resp2.text)
+        f.close()
 
     if resp2.status_code == 200:
         print("Mirrored Gaze solved ✅")

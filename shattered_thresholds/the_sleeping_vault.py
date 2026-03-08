@@ -120,6 +120,9 @@ def solve_sleeping_vault():
     print("vault final status:", resp2.status_code)
 
     if resp2.status_code == 200:
-        print("Sleeping Vault solved ✅")
+        print("Sleeping Vault solved")
+        with open("test_results/sleeping_vault_result.html", "w") as f:
+            f.write(resp2.text)
+            f.close()
     else:
-        print("Sleeping Vault failed ❌")
+        print("Sleeping Vault failed")

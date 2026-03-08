@@ -50,13 +50,11 @@ def solve_exiled_door():
 
     thumbmark, fingerprint = generate_vault_thumbmark()
 
-    # STEP 1 — homepage
     homepage_html = get_bo7_homepage()
     mysterious_home = extract_mysterious_value(homepage_html)
 
     load_thumbmark_script(BASE)
 
-    # STEP 2 — homepage thumbmark
     send_thumbmark(
         mysterious_home,
         BASE,
@@ -66,7 +64,6 @@ def solve_exiled_door():
 
     time.sleep(0.2)
 
-    # STEP 3 — open door (403 expected)
     resp = SESSION.get(
         f"{BASE}/the_exiled_door",
         headers={
@@ -79,12 +76,10 @@ def solve_exiled_door():
 
     html = resp.text
 
-    # STEP 4 — extract NEW mysterious value from 403 page
     mysterious_door = extract_mysterious_value(html)
 
     load_thumbmark_script(f"{BASE}/the_exiled_door")
 
-    # STEP 5 — second thumbmark
     send_thumbmark(
         mysterious_door,
         f"{BASE}/the_exiled_door",
@@ -94,7 +89,6 @@ def solve_exiled_door():
 
     time.sleep(0.3)
 
-    # STEP 6 — reopen door
     resp2 = SESSION.get(
         f"{BASE}/the_exiled_door",
         headers={
@@ -107,5 +101,8 @@ def solve_exiled_door():
 
     if resp2.status_code == 200:
         print("Exiled Door solved ✅")
+        with open("test_results/exiled_door_result.html", "w") as f:
+            f.write(resp2.text)
+            f.close()
     else:
         print("Exiled Door failed ❌")

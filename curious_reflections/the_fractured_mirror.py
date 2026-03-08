@@ -6,12 +6,10 @@ import time
 
 def solve_fractured_mirror():
 
-    # Step 1 — load homepage
     homepage_html = get_bo7_homepage()
 
     mysterious = extract_mysterious_value(homepage_html)
 
-    # Step 2 — send thumbmark BEFORE opening mirror
     thumb = send_thumbmark(
         mysterious,
         "https://bo7.online/"
@@ -36,13 +34,16 @@ def solve_fractured_mirror():
         "upgrade-insecure-requests": "1",
         "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
     }
-    # Step 3 — open fractured mirror
+
     resp = SESSION.get(
         "https://bo7.online/the_fractured_mirror",
         headers=headers
     )
 
     print("mirror page status:", resp.status_code)
+    with open("test_results/fractured_mirror_result.html", "w") as f:
+        f.write(resp.text)
+        f.close()
 
     html = resp.text
 
