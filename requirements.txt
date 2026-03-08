@@ -1,0 +1,11 @@
+certifi==2026.2.25
+cffi==2.0.0
+charset-normalizer==3.4.4
+curl_cffi==0.14.0
+idna==3.11
+mmh3==5.2.0
+pycparser==3.0
+requests==2.32.5
+tls-client==1.0.1
+typing_extensions==4.15.0
+urllib3==2.6.3
