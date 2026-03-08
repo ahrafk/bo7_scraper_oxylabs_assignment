@@ -28,7 +28,7 @@ def get_bo7_homepage():
         }
 
         response = SESSION.get(BASE_URL, headers=headers)
-        print("Cookies after homepage:", SESSION.cookies)
+        
         if response and response.status_code == 200:
             print("Successfully loaded bo7 homepage.")
         
