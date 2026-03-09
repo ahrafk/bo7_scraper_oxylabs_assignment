@@ -100,9 +100,9 @@ def solve_exiled_door():
     print("exiled door final status:", resp2.status_code)
 
     if resp2.status_code == 200:
-        print("Exiled Door solved ✅")
+        print("Exiled Door solved")
         with open("test_results/exiled_door_result.html", "w") as f:
             f.write(resp2.text)
             f.close()
     else:
-        print("Exiled Door failed ❌")
+        print("Exiled Door failed")

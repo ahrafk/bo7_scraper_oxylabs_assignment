@@ -140,10 +140,10 @@ def solve_verity_gate():
 
     if open_resp.status_code == 200 and "The door slides open" in open_resp.text:
 
-        print("Verity Gate solved ✅")
+        print("Verity Gate solved")
 
         with open("test_results/verity_gate_result.html", "w") as f:
             f.write(open_resp.text)
 
     else:
-        print("Verity Gate failed ❌")
+        print("Verity Gate failed")

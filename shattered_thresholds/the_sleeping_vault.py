@@ -154,10 +154,10 @@ def solve_sleeping_vault():
 
     if open_resp.status_code == 200 and "The door slides open" in open_resp.text:
 
-        print("Sleeping Vault solved ✅")
+        print("Sleeping Vault solved")
 
         with open("test_results/sleeping_vault_result.html", "w") as f:
             f.write(open_resp.text)
 
     else:
-        print("Sleeping Vault failed ❌")
+        print("Sleeping Vault failed")
