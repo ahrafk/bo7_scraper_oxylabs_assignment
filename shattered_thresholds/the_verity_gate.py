@@ -5,57 +5,50 @@ import time
 
 BASE = "https://bo7.online"
 
-HEADERS = {
-    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*",
-    "accept-language": "en-US,en;q=0.9",
-    "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
-}
+UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
 
 
 def load_thumbmark_script(referer):
 
     headers = {
         "accept": "*/*",
+        "accept-language": "en-US,en;q=0.9",
         "referer": referer,
         "sec-fetch-dest": "script",
         "sec-fetch-mode": "no-cors",
         "sec-fetch-site": "same-origin",
-        "user-agent": HEADERS["user-agent"]
+        "user-agent": UA
     }
 
     SESSION.get(f"{BASE}/resources/thumbmark.js", headers=headers)
 
 
-def load_gate_script():
+def load_verity_js():
 
     headers = {
         "accept": "*/*",
         "referer": f"{BASE}/the_verity_gate",
-        "user-agent": HEADERS["user-agent"]
+        "sec-fetch-dest": "script",
+        "sec-fetch-mode": "no-cors",
+        "sec-fetch-site": "same-origin",
+        "user-agent": UA
     }
 
     SESSION.get(f"{BASE}/resources/the_verity_gate.js?v=1", headers=headers)
-
-
-def load_open_resource():
-
-    headers = {
-        "accept": "*/*",
-        "referer": f"{BASE}/the_verity_gate",
-        "user-agent": HEADERS["user-agent"]
-    }
-
-    SESSION.get(f"{BASE}/resources/open.html", headers=headers)
 
 
 def send_thumbmark(mysterious, referer, thumbmark, fingerprint):
 
     headers = {
         "accept": "*/*",
+        "accept-language": "en-US,en;q=0.9",
         "content-type": "application/json",
         "origin": BASE,
         "referer": referer,
-        "user-agent": HEADERS["user-agent"],
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-origin",
+        "user-agent": UA,
         "x-mysterious-value": mysterious
     }
 
@@ -78,7 +71,6 @@ def solve_verity_gate():
     thumbmark, fingerprint = generate_vault_thumbmark()
 
     homepage_html = get_bo7_homepage()
-
     mysterious_home = extract_mysterious_value(homepage_html)
 
     load_thumbmark_script(BASE)
@@ -90,28 +82,33 @@ def solve_verity_gate():
         fingerprint
     )
 
-    time.sleep(0.2)
+    time.sleep(0.7)
 
-    headers = HEADERS.copy()
-    headers["referer"] = BASE
+    headers = {
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*",
+        "accept-language": "en-US,en;q=0.9",
+        "referer": BASE,
+        "sec-fetch-dest": "document",
+        "sec-fetch-mode": "navigate",
+        "sec-fetch-site": "same-origin",
+        "upgrade-insecure-requests": "1",
+        "user-agent": UA
+    }
 
     resp = SESSION.get(
         f"{BASE}/the_verity_gate",
         headers=headers
     )
 
-    print("verity gate first load:", resp.status_code)
+    print("gate first load:", resp.status_code)
 
     html = resp.text
     mysterious_gate = extract_mysterious_value(html)
 
-
-    load_gate_script()
-
-    load_open_resource()
-
-
+    load_verity_js()
     load_thumbmark_script(f"{BASE}/the_verity_gate")
+
+    time.sleep(0.7)
 
     send_thumbmark(
         mysterious_gate,
@@ -120,19 +117,33 @@ def solve_verity_gate():
         fingerprint
     )
 
-    time.sleep(0.2)
+    time.sleep(0.7)
 
     resp2 = SESSION.get(
         f"{BASE}/the_verity_gate",
         headers=headers
     )
 
-    print("verity gate final status:", resp2.status_code)
+    print("gate final status:", resp2.status_code)
 
-    if resp2.status_code == 200:
-        print("Verity Gate solved")
+    open_resp = SESSION.get(
+        f"{BASE}/resources/open.html",
+        headers={
+            "accept": "*/*",
+            "referer": f"{BASE}/the_verity_gate",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-origin",
+            "user-agent": UA
+        }
+    )
+
+    if open_resp.status_code == 200 and "The door slides open" in open_resp.text:
+
+        print("Verity Gate solved ✅")
+
         with open("test_results/verity_gate_result.html", "w") as f:
-            f.write(resp2.text)
-            f.close()
+            f.write(open_resp.text)
+
     else:
-        print("Verity Gate failed")
+        print("Verity Gate failed ❌")
