@@ -1,15 +1,19 @@
 from curl_cffi import requests
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 BASE_URL = "https://bo7.online/"
-proxy_url = (
-    f"http://ahrafkhatri7gmailcom-country-de:_S0rqc7c@proxy.mrscraper.com:10000"
-)
-proxy_url_https = (
-    f"http://ahrafkhatri7gmailcom-country-de:_S0rqc7c@proxy.mrscraper.com:10000"
-)
+PROXY_USER = os.getenv("PROXY_USER")
+PROXY_PASS = os.getenv("PROXY_PASS")
+PROXY_HOST = os.getenv("PROXY_HOST")
+PROXY_PORT = os.getenv("PROXY_PORT")
+
+proxy = f"http://{PROXY_USER}:{PROXY_PASS}@{PROXY_HOST}:{PROXY_PORT}"
 proxies = {
-    "http": proxy_url,
-    "https": proxy_url_https,
+    "http": proxy,
+    "https": proxy
 }
 
 SESSION = requests.Session(
@@ -17,6 +21,6 @@ SESSION = requests.Session(
     proxies=proxies
 )
 
-r = SESSION.get("https://httpbin.org/ip")
-
-print(r.text)
+if __name__ == "__main__":
+    r = SESSION.get("https://httpbin.org/ip")
+    print(r.text)
