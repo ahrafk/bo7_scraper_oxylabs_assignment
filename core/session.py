@@ -1,16 +1,22 @@
 from curl_cffi import requests
 
 BASE_URL = "https://bo7.online/"
-# PROXY = "http://91.65.94.20:80"
+proxy_url = (
+    f"http://ahrafkhatri7gmailcom-country-de:_S0rqc7c@proxy.mrscraper.com:10000"
+)
+proxy_url_https = (
+    f"http://ahrafkhatri7gmailcom-country-de:_S0rqc7c@proxy.mrscraper.com:10000"
+)
+proxies = {
+    "http": proxy_url,
+    "https": proxy_url_https,
+}
 
 SESSION = requests.Session(
     impersonate="chrome",
-    # proxies={
-    #     "http": PROXY,
-    #     "https": PROXY
-    # }
+    proxies=proxies
 )
 
-# r = SESSION.get("https://httpbin.org/ip")
+r = SESSION.get("https://httpbin.org/ip")
 
-# print(r.text)
+print(r.text)
