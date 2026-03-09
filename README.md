@@ -1,129 +1,220 @@
-# BO7 Scraper – Oxylabs Web Scraping Assignment
+BO7 Scraping Challenge – Solution
 
-This repository contains my implementation for the **BO7 puzzle challenges** provided as part of the Oxylabs scraping assignment.
+This repository contains my solutions for the BO7 scraping challenge.
+The goal of the challenge is to build scrapers capable of bypassing various blocking mechanisms implemented on bo7.online.
 
-The goal of the task is to programmatically bypass several anti-bot mechanisms implemented on the BO7 website and successfully access the protected pages.
+Each puzzle represents a different type of protection that scrapers commonly encounter in real-world environments such as fingerprinting, request validation, header checks, and request flow verification.
 
-Each puzzle required analysing the request flow, understanding the fingerprinting logic used by the website, and replicating the behaviour of a real browser.
+My focus during the challenge was to understand how the website verifies clients and then reproduce the same behavior programmatically.
 
----
+Overview
 
-## Approach
+The website contains puzzles grouped into different categories:
 
-For most of the challenges I relied on a **Python HTTP client** instead of a browser.
+Mysterious Passages
 
-The site uses a fingerprinting mechanism (`thumbmark`) combined with dynamic tokens (`x-mysterious-value`).
-The scraper replicates the same behaviour performed by the browser:
+Curious Reflections
 
-1. Load the homepage
-2. Extract the dynamic token from the HTML
-3. Generate a browser fingerprint
-4. Send the fingerprint to `/api/thumbmark`
-5. Perform the protected request
-6. Repeat when required by the puzzle logic
+Shattered Thresholds
 
-Some puzzles required additional steps such as:
+Each puzzle behaves like a “door” that remains closed until the scraper successfully mimics the expected browser behavior.
 
-* Loading JavaScript resources before sending fingerprints
-* Handling request timing similar to a real browser
-* Using specific headers or request sequences
-* Replaying flows observed in the browser devtools
+A puzzle is considered solved when the response contains the message:
 
-All puzzles were solved without using a headless browser.
+The door slides open. 🚪
+Cool breeze. Dim light. You step inside.
 
----
+Whatever you’re doing — keep it weird, but quiet.
+Puzzles Solved
 
-## Project Structure
+The following puzzles were successfully solved:
 
-```
-bo7_scraper_oxylabs_assignment
+Sleeping Vault
+
+Verity Gate
+
+Mirrored Gaze
+
+(add the other solved puzzles here)
+
+(add the other solved puzzles here)
+
+For each puzzle the repository contains:
+
+The scraping script
+
+The saved HTML response confirming the door opened
+
+Logs demonstrating the request flow
+
+Approach
+1. Understanding the Browser Flow
+
+For each puzzle I started by reproducing the exact browser behavior using DevTools.
+
+This involved analyzing:
+
+Network requests
+
+Headers and cookies
+
+Request order
+
+JavaScript logic executed on page load
+
+In most cases the puzzle followed a pattern similar to:
+
+Homepage request
+↓
+Fingerprint generation (ThumbmarkJS)
+↓
+POST /api/thumbmark
+↓
+Guarded page request
+↓
+Second fingerprint submission
+↓
+Final page unlock
+
+The challenge was therefore less about parsing HTML and more about replicating the correct interaction flow with the server.
+
+Fingerprinting (ThumbmarkJS)
+
+Several puzzles rely on a browser fingerprint generated using ThumbmarkJS.
+
+The JavaScript collects various browser characteristics such as:
+
+Canvas fingerprint
+
+WebGL fingerprint
+
+Audio fingerprint
+
+Installed fonts
+
+Hardware information
+
+Math function precision
+
+Plugin list
+
+The browser sends this fingerprint to:
+
+POST /api/thumbmark
+
+along with a header:
+
+x-mysterious-value
+
+To replicate this behavior without a browser I created a function that generates a consistent fingerprint payload, which is then reused across requests.
+
+Handling Intentional 403 Responses
+
+Some puzzles intentionally return HTTP 403 on the first request.
+
+This is expected behavior and part of the verification process.
+
+Even though the page is blocked, it still contains important information such as:
+
+the next x-mysterious-value
+
+additional scripts required for the challenge
+
+The scraper therefore continues processing the response instead of treating it as a failure.
+
+Request Flow Replication
+
+Another key aspect of the challenge is that requests must occur in the correct order.
+
+For example:
+
+1. GET /
+2. GET /resources/thumbmark.js
+3. POST /api/thumbmark
+
+4. GET /puzzle_page   (returns 403)
+
+5. GET /resources/thumbmark.js
+6. POST /api/thumbmark (new mysterious value)
+
+7. GET /puzzle_page   (returns 200)
+
+If any of these steps are skipped or executed too quickly, the server rejects the request.
+
+For this reason small delays were introduced to simulate the time required for fingerprint generation in the browser.
+
+Anti-Bot Considerations
+
+The scripts also account for several anti-bot mechanisms:
+
+Header validation
+
+Requests replicate realistic browser headers such as:
+
+sec-ch-ua
+
+sec-fetch-*
+
+upgrade-insecure-requests
+
+referer
+
+Cookie handling
+
+The site relies on a session cookie (wormhole_token) which is preserved across requests using a shared session.
+
+Browser impersonation
+
+Requests are sent using curl_cffi with Chrome impersonation to match the TLS and HTTP fingerprint of a real browser.
+
+Proxy usage
+
+Some puzzles perform IP-based checks, so a proxy can be configured when needed.
+
+Project Structure
+oxylabs-assignment
 │
 ├── core
-│   ├── homepage.py
 │   ├── session.py
-│   └── thumbmark.py
+│   ├── homepage.py
+│   ├── thumbmark.py
 │
-├── curious_reflections
-│   ├── silver_veil.py
-│   ├── fractured_mirror.py
+├── puzzles
 │   ├── mirrored_gaze.py
 │   ├── sleeping_vault.py
 │   ├── verity_gate.py
-│   └── exiled_door.py
+│
+├── test_results
+│   ├── mirrored_gaze_result.html
+│   ├── sleeping_vault_result.html
+│   ├── verity_gate_result.html
 │
 ├── main.py
-├── requirements.txt
 └── README.md
-```
-
-### core/
-
-Shared utilities used by the puzzles.
-
-* **session.py** – manages the HTTP session and cookies
-* **homepage.py** – loads the homepage and extracts the mysterious token
-* **thumbmark.py** – handles fingerprint generation and submission
-
-### curious_reflections/
-
-Contains the solver implementation for each individual puzzle.
-
----
-
-## Implemented Puzzles
-
-The following puzzles are implemented:
-
-* The Silver Veil
-* The Fractured Mirror
-* The Mirrored Gaze
-* The Sleeping Vault
-* The Verity Gate
-* The Exiled Door
-
-Each solver follows the same idea but adapts to the requirements of the specific puzzle.
-
----
-
-## Running the Scraper
+Running the Solver
 
 Install dependencies:
 
-```
 pip install -r requirements.txt
-```
 
-Run the solver:
+Run the main script:
 
-```
 python -m main
-```
 
-The script will run all puzzle solvers sequentially and print the result for each one.
+Each puzzle script will execute and save the resulting HTML confirming that the door was opened.
 
----
+Notes
 
-## Testing
+The challenge was a great exercise in understanding how modern websites verify clients and detect automated traffic.
 
-During development I verified the behaviour of each puzzle by comparing the requests generated by the script with the network flow visible in browser devtools.
+Rather than relying on a headless browser, the focus of this solution was to analyze the verification logic and reproduce it using a lightweight HTTP client.
 
-When the solution is correct, the response status changes from **403** to **200** and the puzzle page content indicates success.
+This approach makes the scrapers faster, simpler, and easier to scale.
 
----
+Final Thoughts
 
-## Notes
+This challenge was enjoyable and required careful analysis of both JavaScript behavior and network interactions.
 
-The assignment mainly focuses on understanding how websites detect automated traffic and how to reproduce legitimate browser behaviour using code.
+It highlights how many anti-bot systems rely not just on headers or cookies, but on the complete interaction pattern between client and server.
 
-This project demonstrates:
-
-* analysing request flows
-* handling fingerprint based validation
-* reproducing browser network behaviour
-* building modular scraping scripts
-
----
-
-## Author
-
-Ahraf Khatri
+Thank you for the opportunity to work on this challenge.
