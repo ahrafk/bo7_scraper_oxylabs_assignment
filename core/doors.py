@@ -3,7 +3,7 @@ from core.session import SESSION
 BASE_URL = "https://bo7.online"
 
 
-def visit_echoed_steps():
+async def visit_echoed_steps():
     url = f"{BASE_URL}/the_door_of_echoed_steps"
 
     headers = {
@@ -22,7 +22,7 @@ def visit_echoed_steps():
         'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36',
     }
 
-    r = SESSION.get(url, headers=headers)
+    r = await SESSION.get(url, headers=headers)
 
     print("Echoed steps status:", r.status_code)
 

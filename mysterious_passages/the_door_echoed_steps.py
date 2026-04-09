@@ -1,31 +1,19 @@
-from core.homepage import get_bo7_homepage, extract_mysterious_value
-from core.thumbmark import send_thumbmark
-from core.session import SESSION
+from core.session import SESSION, BASE_URL
+from core.headers import nav_headers
 
 
-def solve_echoed_steps():
-
-    homepage_html = get_bo7_homepage()
-
-    mysterious = extract_mysterious_value(homepage_html)
-
-    send_thumbmark(mysterious, "https://bo7.online/")
-
-    door = SESSION.get(
-        "https://bo7.online/the_door_of_echoed_steps",
-        headers={"referer": "https://bo7.online/"}
+async def solve_echoed_steps():
+    resp = await SESSION.get(
+        f"{BASE_URL}/the_door_of_echoed_steps",
+        headers=nav_headers(referer=f"{BASE_URL}/"),
     )
 
-    door_html = door.text
+    print(f"Echoed Steps: {resp.status_code}")
 
-    mysterious2 = extract_mysterious_value(door_html)
-
-    send_thumbmark(
-        mysterious2,
-        "https://bo7.online/the_door_of_echoed_steps"
-    )
-
-    print("Echoed steps solved")
     with open("test_results/echoed_steps_result.html", "w") as f:
-        f.write(door.text)
-        f.close()
+        f.write(resp.text)
+
+    if resp.status_code == 200 and "door slides open" in resp.text.lower():
+        print("Echoed Steps solved ✓")
+    else:
+        print("Echoed Steps failed")

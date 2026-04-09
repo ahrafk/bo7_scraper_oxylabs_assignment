@@ -149,52 +149,5 @@
         <p>Whatever you’re doing — keep it weird, but quiet.</p>
 
     </div>
-
-<script>
-(function() {
-    // Wait for page to be fully loaded before starting fingerprint collection
-    function startFingerprinting() {
-        var script = document.createElement('script');
-        script.async = true;
-        script.src = '/resources/thumbmark.js';
-        script.onload = function() {
-            // Use requestIdleCallback if available, otherwise setTimeout with delay
-            var runWhenIdle = window.requestIdleCallback || function(cb) { setTimeout(cb, 500); };
-            runWhenIdle(function() {
-                setTimeout(function() {
-                    if (typeof ThumbmarkJS !== 'undefined' && ThumbmarkJS.getThumbmark) {
-                        ThumbmarkJS.getThumbmark({logging: false}).then(function(fingerprintData) {
-                            if (fingerprintData && fingerprintData.thumbmark) {
-                                // Use fetch with keepalive for non-blocking request
-                                fetch('/api/thumbmark', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'x-mysterious-value': 'nEwRqpI8qgF44iGwzNJKwT3HeHwmJZ4o_QsW2qN1UgQ'
-                                    },
-                                    body: JSON.stringify({
-                                        thumbmark_id: fingerprintData.thumbmark,
-                                        fingerprint: fingerprintData.components || {}
-                                    }),
-                                    keepalive: true
-                                }).catch(function() {});
-                            }
-                        }).catch(function() {});
-                    }
-                }, 100);
-            });
-        };
-        script.onerror = function() {};
-        document.head.appendChild(script);
-    }
-    
-    // Start after page load is complete
-    if (document.readyState === 'complete') {
-        startFingerprinting();
-    } else {
-        window.addEventListener('load', startFingerprinting, {once: true});
-    }
-})();
-</script>
 </body>
 </html>

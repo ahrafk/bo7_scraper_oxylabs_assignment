@@ -1,220 +1,166 @@
-BO7 Scraping Challenge – Solution
+# BO7 Scraping Challenge – Solution
 
-This repository contains my solutions for the BO7 scraping challenge.
-The goal of the challenge is to build scrapers capable of bypassing various blocking mechanisms implemented on bo7.online.
+## Overview
 
-Each puzzle represents a different type of protection that scrapers commonly encounter in real-world environments such as fingerprinting, request validation, header checks, and request flow verification.
+This project solves all 8 puzzles on bo7.online, a challenge site that simulates real-world anti-bot protections. Each puzzle represents a different type of blocking mechanism that scrapers encounter in production environments.
 
-My focus during the challenge was to understand how the website verifies clients and then reproduce the same behavior programmatically.
+The solution uses Python with async/await and curl_cffi for Chrome browser impersonation. All 8 puzzles run concurrently using asyncio.gather.
 
-Overview
+---
 
-The website contains puzzles grouped into different categories:
+## Results
 
-Mysterious Passages
+All 8 puzzles solved successfully:
 
-Curious Reflections
+| Puzzle | Category | Status |
+|---|---|---|
+| The Door of Echoed Steps | Mysterious Passages | Solved |
+| The Clockwork Door | Mysterious Passages | Solved |
+| The Exiled Door | Mysterious Passages | Solved |
+| The Fractured Mirror | Curious Reflections | Solved |
+| The Silver Veil | Curious Reflections | Solved |
+| The Mirrored Gaze | Curious Reflections | Solved |
+| The Sleeping Vault | Shattered Thresholds | Solved |
+| The Verity Gate | Shattered Thresholds | Solved |
 
-Shattered Thresholds
+Each result is saved as an HTML file in test_results/.
 
-Each puzzle behaves like a “door” that remains closed until the scraper successfully mimics the expected browser behavior.
+---
 
-A puzzle is considered solved when the response contains the message:
+## How It Works
 
-The door slides open. 🚪
-Cool breeze. Dim light. You step inside.
+### Session and Cookies
 
-Whatever you’re doing — keep it weird, but quiet.
-Puzzles Solved
+The site uses a session cookie called wormhole_token (value: galactic-cookie-42) to gate access to most puzzles. This cookie is set by the server on the first homepage visit, and it's also seeded directly into the session so that solvers can be run independently.
 
-The following puzzles were successfully solved:
+A single AsyncSession from curl_cffi is shared across all puzzle solvers. It's configured with impersonate="chrome" which replicates Chrome's TLS handshake (JA3 fingerprint) at the network level. This matters for puzzles that inspect the TLS signature of the incoming connection.
 
-Sleeping Vault
+### Header Factory
 
-Verity Gate
+All browser headers are centralised in core/headers.py. Three functions cover the three types of requests a browser makes:
 
-Mirrored Gaze
+- nav_headers() — full navigation headers for page loads (sec-fetch-dest: document)
+- resource_headers() — sub-resource headers for script files (sec-fetch-dest: script)
+- fetch_headers() — XHR/fetch headers for background API calls (sec-fetch-dest: empty)
 
-(add the other solved puzzles here)
+This avoids duplication and ensures headers are consistent across all puzzles.
 
-(add the other solved puzzles here)
+### Concurrency
 
-For each puzzle the repository contains:
+The main entry point visits the homepage once to establish the session, then launches all 8 puzzle solvers concurrently with asyncio.gather. Because curl_cffi.AsyncSession is fully async, the solvers run in parallel without blocking each other.
 
-The scraping script
+---
 
-The saved HTML response confirming the door opened
+## Puzzle Breakdown
 
-Logs demonstrating the request flow
+### Pattern 1 — Single GET
 
-Approach
-1. Understanding the Browser Flow
+These puzzles open with one request. The server checks the wormhole_token cookie and the Referer header to confirm the request came from within the site.
 
-For each puzzle I started by reproducing the exact browser behavior using DevTools.
+- The Door of Echoed Steps — Referer: bo7.online/
+- The Clockwork Door — Referer: bo7.online/
+- The Silver Veil — Referer: bo7.online/ with a consistent full header set
 
-This involved analyzing:
+### Pattern 2 — Two-step with /resources/open.html
 
-Network requests
+These puzzles follow the same flow a real browser takes when executing the page's JavaScript. The page JS performs some checks and then calls fetch("/resources/open.html"). The server validates the Referer header on that second request to confirm the fetch came from the correct puzzle page.
 
-Headers and cookies
+The strategy is to replicate exactly what the browser does:
 
-Request order
+1. GET /puzzle_page — loads the page, records server-side state
+2. GET /resources/open.html with Referer: /puzzle_page — triggers the unlock
 
-JavaScript logic executed on page load
+Puzzles using this pattern:
 
-In most cases the puzzle followed a pattern similar to:
+- The Sleeping Vault
+- The Fractured Mirror
+- The Mirrored Gaze
 
-Homepage request
-↓
-Fingerprint generation (ThumbmarkJS)
-↓
-POST /api/thumbmark
-↓
-Guarded page request
-↓
-Second fingerprint submission
-↓
-Final page unlock
+### Pattern 3 — Three-step with JS preload
 
-The challenge was therefore less about parsing HTML and more about replicating the correct interaction flow with the server.
+Same as Pattern 2, but the page also loads a JavaScript file as a script tag before making the fetch call. The script load has to be replicated to satisfy the server's request-sequence check.
 
-Fingerprinting (ThumbmarkJS)
+1. GET /the_verity_gate — page load
+2. GET /resources/the_verity_gate.js?v=1 — script load (sec-fetch-dest: script)
+3. GET /resources/open.html with Referer: /the_verity_gate
 
-Several puzzles rely on a browser fingerprint generated using ThumbmarkJS.
+Puzzles using this pattern:
 
-The JavaScript collects various browser characteristics such as:
+- The Verity Gate
 
-Canvas fingerprint
+### The Exiled Door — Special Case
 
-WebGL fingerprint
+This puzzle requires the request to look like it comes from a visitor who has never been on the site before — no cookie, no referer, sec-fetch-site: none. A fresh AsyncSession (no wormhole_token cookie) is used for both steps of this puzzle.
 
-Audio fingerprint
+1. GET /the_exiled_door with sec-fetch-site: none and no Referer — fresh session, no cookie
+2. GET /resources/open.html with Referer: /the_exiled_door — still within the fresh session
 
-Installed fonts
+---
 
-Hardware information
+## Project Structure
 
-Math function precision
-
-Plugin list
-
-The browser sends this fingerprint to:
-
-POST /api/thumbmark
-
-along with a header:
-
-x-mysterious-value
-
-To replicate this behavior without a browser I created a function that generates a consistent fingerprint payload, which is then reused across requests.
-
-Handling Intentional 403 Responses
-
-Some puzzles intentionally return HTTP 403 on the first request.
-
-This is expected behavior and part of the verification process.
-
-Even though the page is blocked, it still contains important information such as:
-
-the next x-mysterious-value
-
-additional scripts required for the challenge
-
-The scraper therefore continues processing the response instead of treating it as a failure.
-
-Request Flow Replication
-
-Another key aspect of the challenge is that requests must occur in the correct order.
-
-For example:
-
-1. GET /
-2. GET /resources/thumbmark.js
-3. POST /api/thumbmark
-
-4. GET /puzzle_page   (returns 403)
-
-5. GET /resources/thumbmark.js
-6. POST /api/thumbmark (new mysterious value)
-
-7. GET /puzzle_page   (returns 200)
-
-If any of these steps are skipped or executed too quickly, the server rejects the request.
-
-For this reason small delays were introduced to simulate the time required for fingerprint generation in the browser.
-
-Anti-Bot Considerations
-
-The scripts also account for several anti-bot mechanisms:
-
-Header validation
-
-Requests replicate realistic browser headers such as:
-
-sec-ch-ua
-
-sec-fetch-*
-
-upgrade-insecure-requests
-
-referer
-
-Cookie handling
-
-The site relies on a session cookie (wormhole_token) which is preserved across requests using a shared session.
-
-Browser impersonation
-
-Requests are sent using curl_cffi with Chrome impersonation to match the TLS and HTTP fingerprint of a real browser.
-
-Proxy usage
-
-Some puzzles perform IP-based checks, so a proxy can be configured when needed.
-
-Project Structure
-oxylabs-assignment
-│
-├── core
-│   ├── session.py
-│   ├── homepage.py
-│   ├── thumbmark.py
-│
-├── puzzles
-│   ├── mirrored_gaze.py
-│   ├── sleeping_vault.py
-│   ├── verity_gate.py
-│
-├── test_results
-│   ├── mirrored_gaze_result.html
-│   ├── sleeping_vault_result.html
-│   ├── verity_gate_result.html
-│
-├── main.py
-└── README.md
-Running the Solver
+```
+oxylabs-assignment/
+|
++-- core/
+|   +-- session.py        # Shared AsyncSession with cookie + proxy config
+|   +-- homepage.py       # Homepage visit to establish session
+|   +-- headers.py        # Centralised browser header factories
+|   +-- thumbmark.py      # Thumbmark POST helper (retained)
+|
++-- mysterious_passages/
+|   +-- the_door_echoed_steps.py
+|   +-- the_clockwork_door.py
+|   +-- the_exiled_doors.py
+|
++-- curious_reflections/
+|   +-- the_fractured_mirror.py
+|   +-- the_silver_veil.py
+|   +-- the_mirror_gaze.py
+|
++-- shattered_thresholds/
+|   +-- the_sleeping_vault.py
+|   +-- the_verity_gate.py
+|
++-- test_results/          # Saved HTML from each solved puzzle
++-- main.py                # Entry point — runs all solvers concurrently
++-- requirements.txt
++-- README.md
+```
+
+---
+
+## Running the Solver
 
 Install dependencies:
 
+```bash
 pip install -r requirements.txt
+```
 
-Run the main script:
+Configure environment variables by creating a .env file:
 
-python -m main
+```
+PROXY_USER=your_user
+PROXY_PASS=your_password
+PROXY_HOST=your_host
+PROXY_PORT=your_port
+```
 
-Each puzzle script will execute and save the resulting HTML confirming that the door was opened.
+Run:
 
-Notes
+```bash
+python main.py
+```
 
-The challenge was a great exercise in understanding how modern websites verify clients and detect automated traffic.
+---
 
-Rather than relying on a headless browser, the focus of this solution was to analyze the verification logic and reproduce it using a lightweight HTTP client.
+## Key Technical Decisions
 
-This approach makes the scrapers faster, simpler, and easier to scale.
+**curl_cffi over requests or httpx** — curl_cffi wraps libcurl and lets you specify a browser to impersonate. This replicates the TLS fingerprint (JA3 hash) and HTTP/2 settings at the socket level, which plain Python HTTP libraries cannot do. Puzzles that inspect the TLS handshake will reject requests from standard libraries regardless of what headers you set.
 
-Final Thoughts
+**No headless browser** — Playwright or Puppeteer would work but they add significant overhead and complexity. Analysing the JS on each page and replicating the request flow directly in Python is faster, lighter, and easier to scale.
 
-This challenge was enjoyable and required careful analysis of both JavaScript behavior and network interactions.
+**No ThumbmarkJS replication** — The initial approach tried to replicate the ThumbmarkJS fingerprint payload and POST it to /api/thumbmark before each puzzle. After analysis, that endpoint is passive analytics only — the server collects the data but does not use it as an access gate. The actual gate is the Referer header on the /resources/open.html fetch. Removing it simplified the code significantly.
 
-It highlights how many anti-bot systems rely not just on headers or cookies, but on the complete interaction pattern between client and server.
-
-Thank you for the opportunity to work on this challenge.
+**Async concurrency** — All 8 solvers run in parallel via asyncio.gather. The total runtime is roughly the time of the slowest single puzzle rather than the sum of all eight.
