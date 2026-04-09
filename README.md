@@ -147,11 +147,24 @@ PROXY_HOST=your_host
 PROXY_PORT=your_port
 ```
 
-Run:
+Run with defaults (10 req/s, all 8 solvers concurrent):
 
 ```bash
 python main.py
 ```
+
+Control request rate and concurrency:
+
+```bash
+python main.py --rps 5 --concurrency 4
+```
+
+| Flag | Default | Description |
+|---|---|---|
+| --rps | 10 | Maximum requests per second across all solvers |
+| --concurrency | 8 | Maximum number of puzzle solvers running at once |
+
+Lowering --concurrency or --rps is useful when testing against rate-limited environments. Raising them stress-tests the solution at scale.
 
 ---
 
